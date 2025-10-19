@@ -1,0 +1,53 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "source_method": "addCircleMarkers",
+                "index": 0,
+                "label": "MB01",
+                "popup": "<p><strong>MB01</strong>: This site in the middle of Monterey Bay, and on the edge of Monterey Canyon, is busy with foraging animals and vessels for commerical and recreational acitivities including fishing, whale watching and occasional visits from large cruise ships.</p>\n"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -121.976,
+                    36.798
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "source_method": "addCircleMarkers",
+                "index": 1,
+                "label": "MB02",
+                "popup": "<p><strong>MB02</strong>: Adjacent to four marine protected areas and in rich kelp forest habitat, this shallow area off Point Pinos has a lot of vessel traffic in and out of Monterey Harbor.</p>\n"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -121.9084,
+                    36.648
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "source_method": "addCircleMarkers",
+                "index": 2,
+                "label": "MB03",
+                "popup": "<p><strong>MB03</strong>: Offshore in the middle of transit lanes for ships weighing 300+ gross tons, this is a deep water area teeming with wide-ranging marine mammals, such as whales and dolphins.</p>\n"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -122.314903,
+                    36.37021
+                ]
+            }
+        }
+    ]
+}

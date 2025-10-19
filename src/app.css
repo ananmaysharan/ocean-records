@@ -1,0 +1,14 @@
+@import './theme.css';
+/* @import 'tailwindcss'; */
+
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    body {
+        display: block;
+    }
+}
