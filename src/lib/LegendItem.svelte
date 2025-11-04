@@ -49,7 +49,7 @@
         ships: 'Ship',
         bluewhale: 'Blue Whale',
         finwhale: 'Fin Whale',
-        humpbackwhale: 'Humpback Whale',
+        humpbackwhale: 'Humpback',
         dolphins: 'Dolphin',
         bocaccio: 'Boccacio',
         explosions: 'Explosion'
@@ -78,7 +78,7 @@
             description: 'The bocaccio is a species of marine fish in the rockfish family. They can live up to 50 years, inhabiting rocky reefs along the Pacific coast.'
         },
         dolphins: {
-            name: 'Common Dolphin',
+            name: 'Dolphin',
             scientific: 'Delphinus delphis',
             description: 'Dolphins are highly intelligent marine mammals known for their playful behavior and complex social structures. They use echolocation to navigate and hunt.'
         },
@@ -143,7 +143,7 @@
         const info = speciesInfo[soundType];
         tooltip
             .classed('hidden', false)
-            .html(`<span class="tooltip-name">${info.name}</span><span class="tooltip-scientific">(${info.scientific})</span><span class="tooltip-desc">${info.description}</span>`);
+            .html(`<span class="tooltip-name">${info.name}</span><span class="tooltip-scientific">${info.scientific}</span><span class="tooltip-desc">${info.description}</span>`);
         moveTooltip(event);
     }
 
@@ -175,13 +175,13 @@
     }}
 >
     <div class="content">
-        <div class="type-name font-mono text-xs">{displayName}</div>
+        <div class="type-name uppercase font-mono text-xs">{displayName}</div>
          <div class="count font-mono text-xs">{count}</div>
         <div class="visual">
             <div class="circle" style="background-color: {color};"></div>
             <img src={imageSrc} alt={displayName} class="illustration" />
         </div>
-        <div class="status text-xs">{status}</div>
+        <div class="status font-mono text-xs">{status}</div>
     </div>
 </div>
 
@@ -198,12 +198,6 @@
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
-    }
-    
-
-    
-    .type-name {
-        text-transform: capitalize;
     }
     
     .count {
@@ -251,11 +245,11 @@
     :global(.legend-tooltip) {
         z-index: 10;
         background: var(--surface-overlay);
+        backdrop-filter: blur(12px); /* Blur effect */
+        -webkit-backdrop-filter: blur(12px); /* Safari support */
         border: 1px solid var(--border-subtle);
-        font-family: var(--font-mono, monospace);
         color: var(--text-primary);
         padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
@@ -272,13 +266,15 @@
 
     :global(.tooltip-name) {
         font-weight: 600;
-        text-transform: capitalize;
+        text-transform: uppercase;
+        font-family: var(--font-mono);
     }
 
     :global(.tooltip-scientific) {
         font-size: 0.7rem;
         text-transform: italic;
         color: var(--text-secondary);
+        font-family: var(--font-serif);
     }
 
     :global(.tooltip-desc) {

@@ -814,16 +814,15 @@
   :global(.day-card-tooltip) {
     z-index: 10;
     background: var(--surface-overlay);
+    backdrop-filter: blur(12px); /* Blur effect */
+    -webkit-backdrop-filter: blur(12px); /* Safari support */
     border: 1px solid var(--border-subtle);
-    font-family: var(--font-mono, monospace);
     color: var(--text-primary);
     padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
     font-size: 0.75rem;
-    /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
     transition: opacity 0.15s ease;
     opacity: 1;
     max-width: 12rem;
@@ -836,7 +835,8 @@
 
   :global(.day-card-tooltip .tooltip-label) {
     font-weight: 600;
-    text-transform: capitalize;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
   }
 
   @media (max-width: 1600px) {

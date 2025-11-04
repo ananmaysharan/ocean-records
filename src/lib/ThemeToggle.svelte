@@ -25,7 +25,7 @@
 			<span aria-hidden="true"><iconify-icon icon="lucide:moon"></iconify-icon></span>
 		</label>
 
-				<!-- Blue -->
+		<!-- Blue -->
 		<input
 			type="radio"
 			name="theme"
@@ -50,6 +50,7 @@
 		<label for="light" title="Light theme">
 			<span aria-hidden="true"><iconify-icon icon="lucide:sun"></iconify-icon></span>
 		</label>
+		<span class="selection-indicator" aria-hidden="true"></span>
 	</div>
 </div>
 
@@ -62,57 +63,82 @@
 	}
 
 	.toggle-group {
+		position: relative;
 		display: inline-flex;
-		border-radius: 0.25rem;
 		background: var(--surface-1);
-		backdrop-filter: blur(12px);
-		height: 2rem;
-		width: auto;
+		border: 1.5px solid var(--border-subtle);
 		padding: 0.125rem;
 		gap: 0.125rem;
-		transition: all 0.2s ease;
-		border: 1px solid var(--border-subtle);
+		height: 2rem;
 	}
 
-	.toggle-group input[type='radio'] {
+	/* Hide radio inputs */
+	input[type='radio'] {
 		position: absolute;
 		opacity: 0;
 		pointer-events: none;
 	}
 
-	.toggle-group label {
+	/* Each theme option */
+	label {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0 0.5rem;
+		width: 2rem;
+		height: 100%;
 		cursor: pointer;
 		color: var(--text-secondary);
-		background: transparent;
-		transition: all 0.2s ease;
-		border-radius: 0.125rem;
-		min-width: 2rem;
-		height: 100%;
-	}
-
-	.toggle-group label:hover {
-		background: var(--accent);
-		color: var(--text-primary);
-	}
-
-	.toggle-group input[type='radio']:checked + label {
-		background: var(--accent);
-		color: var(--text-primary);
-		font-weight: 600;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.toggle-group input[type='radio']:focus-visible + label {
-		outline: 2px solid var(--accent);
-		outline-offset: -2px;
+		transition: color 0.2s ease;
 		z-index: 1;
 	}
 
-	.toggle-group label iconify-icon {
+	label:hover {
+		color: var(--accent);
+	}
+
+	input:checked + label {
+		color: var(--text-primary);
+	}
+
+	input:focus-visible + label {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+	}
+
+	label iconify-icon {
 		font-size: 0.875rem;
+	}
+
+	/* Sliding background indicator */
+	.selection-indicator {
+		position: absolute;
+		top: 0.125rem;
+		left: 0.125rem;
+		width: 2rem;
+		height: calc(100% - 0.25rem);
+		background: var(--accent);
+		border: 1px solid var(--border-subtle);
+		transition: transform 0.25s ease-out;
+		z-index: 0;
+	}
+
+	/* Move indicator based on selection */
+	input[id='dark']:checked ~ .selection-indicator {
+		transform: translateX(0);
+	}
+
+	input[id='blue']:checked ~ .selection-indicator {
+		transform: translateX(2.125rem); /* 2rem width + 0.125rem gap */
+	}
+
+	input[id='light']:checked ~ .selection-indicator {
+		transform: translateX(4.25rem); /* (2rem width + 0.125rem gap) × 2 */
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.selection-indicator {
+			transition: none;
+		}
 	}
 </style>

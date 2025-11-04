@@ -1,6 +1,6 @@
 <script lang="ts">
-  import yearLegendUrl from '/assets/legend/year_legend.svg?url';
-  import monthLegendUrl from '/assets/legend/month_legend.svg?url';
+  import yearLegendUrl from '$lib/assets/legend/year_legend.svg?url';
+  import monthLegendUrl from '$lib/assets/legend/month_legend.svg?url';
 
   interface LegendConfig {
     src: string;

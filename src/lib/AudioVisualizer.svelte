@@ -82,7 +82,7 @@
         
         // Resolve stroke color based on highlight or fallback to text color
         const fallbackColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--text-primary')
+            .getPropertyValue('--border-subtle')
             .trim() || '#21558d';
         const accentColor = highlight ? SOUND_TYPE_COLORS[highlight] ?? fallbackColor : fallbackColor;
         

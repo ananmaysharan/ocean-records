@@ -79,18 +79,17 @@
 
 <style>
     .stage {
-        min-height: calc(100vh - 4rem);
+        min-height: 100vh; /* Changed from calc(100vh - 4rem) to allow growth */
         display: flex;
-    }
-
-    .stage.has-content {
-        gap: 1.5rem;
     }
 
     .map-pane {
         flex: 1;
-        position: relative;
-		z-index: 2;
+        position: sticky; /* Make it stick to viewport */
+        top: 0;
+        height: 100vh; /* Fixed viewport height */
+        z-index: 2;
+        border-right: 1px solid var(--border-subtle);
     }
 
     .stage.has-content .map-pane {
@@ -131,6 +130,7 @@
         opacity: 0;
         animation: fadeIn 0.3s ease forwards;
         margin: 0 1rem;
+        padding: 1em;
     }
 
     .day-wrapper {

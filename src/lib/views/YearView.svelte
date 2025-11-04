@@ -167,7 +167,7 @@
         const displayName = displayNames[soundType] || soundType;
         tooltip
             .classed('hidden', false)
-            .html(`<span class="tooltip-label">${formatDate(label)}</span><span class="tooltip-type">${displayName}</span><span class="tooltip-value">${formatDetectionValue(value)}</span>`);
+            .html(`<span class="tooltip-label">${displayName}</span><span class="tooltip-value">${formatDetectionValue(value)}</span>`);
         moveTooltip(event);
     }
 
@@ -427,10 +427,10 @@
 <div class="visualization-wrapper">
     <div class="heading-container">
         {#if layout === 'grid'}
-            <h1 class="pl-3 font-mono text-md uppercase" in:fade={{ duration: 300, delay: 150 }} out:fade={{ duration: 150 }}>Monthly Detections</h1>
+            <h1 class="pl-3 font-serif text-md" in:fade={{ duration: 300, delay: 150 }} out:fade={{ duration: 150 }}>Monthly Detections</h1>
         {/if}
         {#if layout === 'row' && $selectedMonth !== null && $selectedYear !== null}
-            <h1 class="font-mono text-md uppercase" in:fade={{ duration: 300, delay: 150 }} out:fade={{ duration: 150 }}>{formatMonthYearHeading($selectedYear, $selectedMonth)}</h1>
+            <h1 class="font-serif text-md" in:fade={{ duration: 300, delay: 150 }} out:fade={{ duration: 150 }}>{formatMonthYearHeading($selectedYear, $selectedMonth)}</h1>
         {/if}
     </div>
     {#if layout === 'row' && $selectedMonth === null}
@@ -497,7 +497,7 @@
         gap: 1rem;
         margin-bottom: 1rem;
         justify-content: flex-start;
-        /* border-bottom: 1px solid var(--accent); */
+        border-bottom: 1px solid var(--border-subtle);
     }
 
     .legend-items {
@@ -520,6 +520,7 @@
         gap: 1rem;
         min-height: 200px;
         margin: 0 1rem;
+        padding: 1em;
     }
 
     .heading-container {
@@ -650,16 +651,15 @@
     :global(.circle-tooltip) {
         z-index: 10;
         background: var(--surface-overlay);
+        backdrop-filter: blur(12px); /* Blur effect */
+        -webkit-backdrop-filter: blur(12px); /* Safari support */
         border: 1px solid var(--border-subtle);
-        font-family: var(--font-mono, monospace);
         color: var(--text-primary);
         padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
         font-size: 0.75rem;
-        /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
         transition: opacity 0.15s ease;
         opacity: 1;
         max-width: 12rem;
@@ -672,33 +672,35 @@
 
     :global(.tooltip-label) {
         font-weight: 600;
-        text-transform: capitalize;
+        text-transform: uppercase;
+        font-family: var(--font-mono);
     }
 
     :global(.tooltip-type) {
         font-size: 0.7rem;
         text-transform: capitalize;
         color: var(--text-secondary);
+        font-family: var(--font-serif);
     }
 
     :global(.tooltip-value) {
         font-size: 0.8rem;
         font-weight: 500;
+        line-height: 1.4;
     }
 
     :global(.month-tooltip) {
         z-index: 10;
         background: var(--surface-overlay);
+        backdrop-filter: blur(12px); /* Blur effect */
+        -webkit-backdrop-filter: blur(12px); /* Safari support */
         border: 1px solid var(--border-subtle);
-        font-family: var(--font-mono, monospace);
         color: var(--text-primary);
         padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
         font-size: 0.75rem;
-        /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
         transition: opacity 0.15s ease;
         opacity: 1;
         max-width: 12rem;
@@ -711,6 +713,7 @@
 
     :global(.month-tooltip .tooltip-label) {
         font-weight: 600;
-        text-transform: capitalize;
+        text-transform: uppercase;
+        font-family: var(--font-mono);
     }
 </style>
