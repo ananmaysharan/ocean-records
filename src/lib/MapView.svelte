@@ -9,15 +9,12 @@
 	import { fade } from 'svelte/transition';
 	import sensorsGeo from '$lib/assets/sensors.geo.json';
 	import { SENSOR_METADATA } from '$lib/data';
-	import { selectedSensor, canGoBack, selectedDay, type SelectedDay } from '$lib/state/navigation';
+	import { selectedSensor, canGoBack } from '$lib/state/navigation';
 	import { theme, type ThemeId } from '$lib/state/theme';
 	import type { CircleLayerSpecification, MapMouseEvent, GeoJSONFeature } from 'mapbox-gl';
 	import type { FeatureCollection, Point } from 'geojson';
 	import BackButton from './BackButton.svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
-	import DayCardPreview from './components/DayCardPreview.svelte';
-	import PerchAnalysisChart from './components/PerchAnalysisChart.svelte';
-	import type { DayCardPreviewData } from '$lib/types/day-card';
 
 	// Types
 	type MapMode = 'intro' | 'sidebar';
@@ -77,14 +74,6 @@
 	const INACTIVE_STROKE = '#ffffff';
 	const ACTIVE_STROKE_FALLBACK = '#ffffff';
 
-	const dayOverlayFormatter = new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC'
-});
-
 	const sensorsData: FeatureCollection<Point, { sensorId: string; label?: string; popup?: string | null }> = {
 		type: 'FeatureCollection',
 		features: sensorsGeo.features.map((feature: any, index: number) => ({
@@ -116,8 +105,6 @@
 	// UI-related
 	let showEnterButton = false;
 	let isTransitioning = false;
-	let dayOverlayCard: DayCardPreviewData | null = null;
-	let dayOverlayLabel: string | null = null;
 	let introSpinEnabled = false;
 	let introUserInteracting = false;
 
@@ -400,35 +387,6 @@
 	}
 
 	// Utilities
-	function resolveSelectedDate(selection: SelectedDay | null): Date | null {
-		if (!selection) return null;
-		const { time } = selection as { time?: string | Date };
-		if (time instanceof Date) {
-			return time;
-		}
-		if (typeof time === 'string') {
-			const parsed = new Date(time);
-			if (!Number.isNaN(parsed.getTime())) {
-				return parsed;
-			}
-		}
-		const isoDay = typeof selection?.isoDay === 'string' ? selection.isoDay : undefined;
-		if (isoDay) {
-			const parsed = new Date(isoDay);
-			if (!Number.isNaN(parsed.getTime())) {
-				return parsed;
-			}
-		}
-		return null;
-	}
-
-	$: {
-		const selection = $selectedDay as (SelectedDay & { dayCard?: DayCardPreviewData | null }) | null;
-		dayOverlayCard = selection?.dayCard ?? null;
-		const selectionDate = resolveSelectedDate(selection ?? null);
-		dayOverlayLabel = selectionDate ? dayOverlayFormatter.format(selectionDate) : null;
-	}
-
 	function getAccentColors() {
 		if (!browser) {
 			return {
@@ -578,22 +536,6 @@
 
 	{/if}
 
-	{#if mode === 'sidebar' && $selectedDay}
-		<div class="day-overlay">
-			<div class="day-overlay__content">
-				{#if dayOverlayLabel}
-					<header class="day-header">
-						<h1 class="font-mono">{dayOverlayLabel}</h1>
-					</header>
-				{/if}
-				{#if dayOverlayCard}
-					<DayCardPreview card={dayOverlayCard} />
-				{/if}
-				<PerchAnalysisChart />
-			</div>
-		</div>
-	{/if}
-
 	{#if mode === 'sidebar' && activeSensorMeta}
 		<div class="sensor-info text-text-primary" in:fade={{ duration: 300, delay: 1000 }}>
 			<div class="flex items-center gap-3">
@@ -604,7 +546,7 @@
 					<h1 class="text-2xl font-serif text-text-primary">Ocean Records</h1>
 				</div>
 			</div>
-			<p class="sensor-title font-mono mt-4">Sensor {activeSensorMeta.label}</p>
+			<p class="sensor-title uppercase font-mono mt-4">Sensor {activeSensorMeta.label}</p>
 			<!-- <p class="sensor-subtitle">{activeSensorMeta.id.toUpperCase()}</p> -->
 			{#if activeSensorDescription}
 				<p class="sensor-description">{activeSensorDescription}</p>
@@ -671,7 +613,8 @@
 	}
 
 	.enter-button:hover {
-		transform: translateY(-2px);
+		/* color: var(--accent); */
+		transform: scale(1.01);
 	}
 
 	.enter-button:focus-visible {
@@ -692,57 +635,12 @@
 		z-index: 30;
 	}
 
-	.sensor-title {
-		font-weight: 600;
-	}
-
 	.sensor-description {
 		margin: 0.5rem 0 0;
 		font-size: 0.75rem;
 		line-height: 1.4;
 		color: var(--text-secondary);
 		max-width: 20rem;
-	}
-
-	.day-overlay {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: flex-start;
-		justify-content: flex-start;
-		padding: 1rem;
-		pointer-events: none;
-		z-index: 20;
-	}
-
-	.day-overlay::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: var(--surface-1);
-		opacity: 1;
-	}
-
-	.day-overlay__content {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		pointer-events: auto;
-		max-width: min(480px, 90vw);
-		margin-top: 13rem;
-		border: 1px solid var(--border-subtle);
-		padding: 1.5rem;
-		border-radius: 0.5rem;
-	}
-
-	.day-header {
-		margin: 0;
-	}
-
-	.day-header h1 {
-		margin: 0;
-		color: var(--text-primary);
 	}
 
 	:global(.cursor-pointer) {

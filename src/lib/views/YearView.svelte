@@ -8,7 +8,7 @@
     import LegendItem from '../LegendItem.svelte';
     import LegendGraphic from '../components/LegendGraphic.svelte';
     import { getMonthSummary } from '$lib/data';
-    import { selectedSensor, selectedMonth, selectedYear, goToMonth, setYear } from '$lib/state/navigation';
+    import { selectedSensor, selectedMonth, selectedYear, goToMonth, setYear, previousView } from '$lib/state/navigation';
     import { get } from 'svelte/store';
     import { playSound, stopSound, stopAllSounds } from '$lib/utils/soundEffects';
     import { setSoundHighlight, clearSoundHighlight } from '$lib/state/audio';
@@ -368,7 +368,13 @@
     }
 
     $: if ($selectedMonth !== null && layout !== 'row') {
-        changeLayout('row');
+        // Skip Flip animation when coming back from DayView since layout is already 'row'
+        if ($previousView === 'day') {
+            // Just update the layout state without animation
+            layout = 'row';
+        } else {
+            changeLayout('row');
+        }
     }
 
     $: if ($selectedMonth === null && layout !== 'grid') {

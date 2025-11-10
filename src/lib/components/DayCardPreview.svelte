@@ -20,10 +20,11 @@
   const HOUR_CENTER_OFFSET = COLUMN_WIDTH / 2;
   const BAR_WIDTH = TIMELINE_CONTENT_WIDTH;
   const BAR_GAP = 5;
+  const TIMELINE_LABEL_Y = 0;
   const circleRadius = COLUMN_WIDTH * 0.45;
   const circleDiameter = circleRadius * 2;
   const BAR_HEIGHT = circleRadius;
-  const SHIPS_ROW_Y = 22;
+  const SHIPS_ROW_Y = 30;
   const EXPLOSIONS_ROW_Y = SHIPS_ROW_Y + circleDiameter + 6;
   const BLUE_ROW_Y = EXPLOSIONS_ROW_Y + circleDiameter + 6;
   const BOCCACCIO_ROW_Y = BLUE_ROW_Y + circleDiameter + 6;
@@ -49,10 +50,19 @@
 
   const tileStyle = `--color-humpback:${humpbackColor};--color-fin:${finColor};--color-blue:${blueColor};--color-ships:${shipsColor};--color-explosions:${explosionsColor};--color-bocaccio:${bocaccioColor};--color-dolphin:${dolphinColor};--circle-stroke:${circleStrokeColor};--pill-fill:${pillFillColor};--pill-border:${pillBorderColor};--color-humpback-zero-fill:${humpbackZeroFill};--color-humpback-zero-stroke:${humpbackZeroStroke};--color-fin-zero-fill:${finZeroFill};--color-fin-zero-stroke:${finZeroStroke};`;
 
+  const hourLabels = Array.from({ length: 24 }, (_, hour) => hour);
+
   export let card: DayCardPreviewData | null = null;
 
   function hourToX(hour: number) {
     return TIMELINE_MARGIN_LEFT + hour * (COLUMN_WIDTH + COLUMN_GAP) + HOUR_CENTER_OFFSET;
+  }
+
+  function labelX(hour: number) {
+    if (hour === 24) {
+      return TIMELINE_MARGIN_LEFT + BAR_WIDTH;
+    }
+    return hourToX(hour);
   }
 
   function generatePillPath(
@@ -63,57 +73,37 @@
     if (activeRows.length === 0) return '';
 
     const sortedRows = [...activeRows].sort((a, b) => a.y - b.y);
-    const topY = sortedRows[0].y - circleRadius - compressionOffset;
-    const bottomY = sortedRows[sortedRows.length - 1].y + circleRadius - compressionOffset;
+    const topY = sortedRows[0].y - circleRadius + 10;
+    const bottomY = sortedRows[sortedRows.length - 1].y + circleRadius + 5;
 
-    const width = 15;
+    const width = 25;
     const halfWidth = width / 2;
-    const bulgeFactor = 5;
-    const pinchFactor = 0.1;
+    const radius = halfWidth; // Rounded corners with radius equal to half the width
 
+    const left = x - halfWidth;
+    const right = x + halfWidth;
+
+    // Create a simple rounded rectangle path
     let path = '';
 
-    path += `M ${x - halfWidth} ${topY} `;
+    // Start at top-left, after the corner radius
+    path += `M ${left + radius} ${topY}`;
 
-    for (let i = 0; i < sortedRows.length; i += 1) {
-      const circleY = sortedRows[i].y - compressionOffset;
-      const isLast = i === sortedRows.length - 1;
-      const bulgeX = x + halfWidth + bulgeFactor;
+    // Top edge and top-right corner
+    path += `L ${right - radius} ${topY} `;
+    path += `Q ${right} ${topY}, ${right} ${topY + radius} `;
 
-      if (i === 0) {
-        path += `Q ${x + halfWidth} ${topY + 5}, ${bulgeX} ${circleY} `;
-      } else {
-        const prevCircleY = sortedRows[i - 1].y - compressionOffset;
-        const pinchY = (prevCircleY + circleY) / 2;
-        const pinchX = x + halfWidth * pinchFactor;
-        path += `Q ${pinchX} ${pinchY}, ${bulgeX} ${circleY} `;
-      }
+    // Right edge and bottom-right corner
+    path += `L ${right} ${bottomY - radius} `;
+    path += `Q ${right} ${bottomY}, ${right - radius} ${bottomY} `;
 
-      if (isLast) {
-        path += `Q ${x + halfWidth} ${bottomY - 5}, ${x + halfWidth} ${bottomY} `;
-      }
-    }
+    // Bottom edge and bottom-left corner
+    path += `L ${left + radius} ${bottomY} `;
+    path += `Q ${left} ${bottomY}, ${left} ${bottomY - radius} `;
 
-    path += `L ${x - halfWidth} ${bottomY} `;
-
-    for (let i = sortedRows.length - 1; i >= 0; i -= 1) {
-      const circleY = sortedRows[i].y - compressionOffset;
-      const isFirst = i === 0;
-      const bulgeX = x - halfWidth - bulgeFactor;
-
-      if (i === sortedRows.length - 1) {
-        path += `Q ${x - halfWidth} ${bottomY - 5}, ${bulgeX} ${circleY} `;
-      } else {
-        const nextCircleY = sortedRows[i + 1].y - compressionOffset;
-        const pinchY = (nextCircleY + circleY) / 2;
-        const pinchX = x - halfWidth * pinchFactor;
-        path += `Q ${pinchX} ${pinchY}, ${bulgeX} ${circleY} `;
-      }
-
-      if (isFirst) {
-        path += `Q ${x - halfWidth} ${topY + 5}, ${x - halfWidth} ${topY} `;
-      }
-    }
+    // Left edge and top-left corner
+    path += `L ${left} ${topY + radius} `;
+    path += `Q ${left} ${topY}, ${left + radius} ${topY} `;
 
     path += 'Z';
     return path;
@@ -131,6 +121,16 @@
       role="img"
       aria-label={`Timeline for ${card.label}`}
     >
+      {#each hourLabels as hour}
+        <text
+          x={labelX(hour)}
+          y={TIMELINE_LABEL_Y}
+          text-anchor={hour === 24 ? 'end' : 'middle'}
+          dominant-baseline="hanging"
+          class="time-label"
+        >{hour}</text>
+      {/each}
+
       {#if card.humpback !== 'missing'}
         <rect
           x={TIMELINE_MARGIN_LEFT}
@@ -146,7 +146,8 @@
           x={TIMELINE_MARGIN_LEFT}
           y={FIN_BAR_Y - COMPRESSION_OFFSET}
           width={BAR_WIDTH}
-          height={BAR_HEIGHT}\n          rx={BAR_HEIGHT / 2}
+          height={BAR_HEIGHT}
+          rx={BAR_HEIGHT / 2}
           class={`bar fin ${card.fin}`}
         />
       {/if}
@@ -210,14 +211,22 @@
   .day-card {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 0.35rem;
+    width: 100%;
   }
 
   svg {
     width: 100%;
     height: auto;
     display: block;
+  }
+
+  .time-label {
+    font-size: 0.7rem;
+    fill: var(--text-secondary, #94a3b8);
+    font-family: var(--font-mono, monospace);
+    opacity: 0.9;
   }
 
   .bar.detect.humpback {

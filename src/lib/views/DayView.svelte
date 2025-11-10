@@ -1,9 +1,28 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import DayCardPreview from '$lib/components/DayCardPreview.svelte';
   import LegendItem from '../LegendItem.svelte';
-  import { SENSOR_METADATA } from '$lib/data';
-  import { selectedDay, selectedSensor } from '$lib/state/navigation';
+  import {
+    SENSOR_METADATA,
+    SOUND_TYPE_COLORS,
+    getDaySummaryByDate,
+    getHourSummary
+  } from '$lib/data';
+  import { goToDay, selectedDay, selectedSensor, currentView } from '$lib/state/navigation';
+  import type { SelectedDay } from '$lib/state/navigation';
+  import type {
+    DaySummaryEntry,
+    HourSummaryEntry,
+    SensorId
+  } from '$lib/data';
+  import type {
+    DayCardPreviewData,
+    HourDatum,
+    PillDatum,
+    ValueStatus
+  } from '$lib/types/day-card';
   import type {} from 'p5/lib/addons/p5.sound';
+  
 
   const soundTypes = [
     'ships',
@@ -35,14 +54,203 @@
 
   const audioAssetUrl = new URL('../assets/enhanced.wav', import.meta.url).href;
   const eventsCsvUrl = new URL('../assets/offsets.csv', import.meta.url).href;
+  const ANALYSIS_DAY_ISO = '2020-09-14';
+  const ANALYSIS_DAY_YEAR = 2020;
+  const ANALYSIS_DAY_DATE = new Date('2020-09-14T00:00:00Z');
+  const analysisDateLabel = dateFormatter.format(ANALYSIS_DAY_DATE);
 
+  const COLUMN_WIDTH = 26;
+  const circleRadius = COLUMN_WIDTH * 0.45;
+  const circleDiameter = circleRadius * 2;
+  const SHIPS_ROW_Y = 22;
+  const EXPLOSIONS_ROW_Y = SHIPS_ROW_Y + circleDiameter + 6;
+  const BLUE_ROW_Y = EXPLOSIONS_ROW_Y + circleDiameter + 6;
+  const BOCCACCIO_ROW_Y = BLUE_ROW_Y + circleDiameter + 6;
+  const DOLPHIN_ROW_Y = BOCCACCIO_ROW_Y + circleDiameter + 6;
+
+  const ROWS: Array<{ key: keyof HourDatum; y: number; color: string }> = [
+    { key: 'ships', y: SHIPS_ROW_Y, color: SOUND_TYPE_COLORS.ships },
+    { key: 'explosions', y: EXPLOSIONS_ROW_Y, color: SOUND_TYPE_COLORS.explosions },
+    { key: 'blue', y: BLUE_ROW_Y, color: SOUND_TYPE_COLORS.bluewhale },
+    { key: 'bocaccio', y: BOCCACCIO_ROW_Y, color: SOUND_TYPE_COLORS.bocaccio },
+    { key: 'dolphins', y: DOLPHIN_ROW_Y, color: SOUND_TYPE_COLORS.dolphins }
+  ];
+
+  const dayLabelFormatter = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric'
+  });
+
+  let dayCardPreview: DayCardPreviewData | null = null;
+  let dayCardPreviewError: string | null = null;
+  let dayCardPreviewLoading = false;
+  let dayCardPreviewRequestToken = 0;
+
+  function parseIsoDayToDate(isoDay: string): Date | null {
+    const date = new Date(`${isoDay}T00:00:00Z`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function getValueStatus(value: number | null | undefined): ValueStatus {
+    if (value === null || value === undefined) return 'missing';
+    if (value > 0) return 'detect';
+    return 'zero';
+  }
+
+  function buildHours(entries: HourSummaryEntry[]): HourDatum[] {
+    const byHour = new Map<number, HourSummaryEntry>();
+    for (const entry of entries) {
+      byHour.set(entry.hour, entry);
+    }
+    return Array.from({ length: 24 }, (_, hour) => {
+      const entry = byHour.get(hour);
+      return {
+        hour,
+        ships: getValueStatus(entry?.values.ships),
+        explosions: getValueStatus(entry?.values.explosions),
+        blue: getValueStatus(entry?.values.bluewhale),
+        bocaccio: getValueStatus(entry?.values.bocaccio),
+        dolphins: getValueStatus(entry?.values.dolphins)
+      } satisfies HourDatum;
+    });
+  }
+
+  function getSeriesStatus(
+    entries: HourSummaryEntry[],
+    dayEntry: DaySummaryEntry | undefined,
+    key: 'humpbackwhale' | 'finwhale'
+  ): ValueStatus {
+    const values = entries
+      .map((entry) => entry.values[key])
+      .filter((value): value is number | null => value !== undefined && value !== null);
+    if (values.length > 0) {
+      return values.some((value) => (value ?? 0) > 0) ? 'detect' : 'zero';
+    }
+    const dayValue = dayEntry?.values[key];
+    return getValueStatus(dayValue);
+  }
+
+  function buildPills(hours: HourDatum[]): PillDatum[] {
+    return hours
+      .filter(
+        (hour) =>
+          (hour.ships === 'detect' || hour.explosions === 'detect') &&
+          (hour.blue === 'detect' || hour.bocaccio === 'detect' || hour.dolphins === 'detect')
+      )
+      .map((hour) => {
+        const activeRows = ROWS.filter((row) => hour[row.key] === 'detect').map((row) => ({
+          key: row.key,
+          y: row.y,
+          color: row.color
+        }));
+        return { hour: hour.hour, activeRows } satisfies PillDatum;
+      });
+  }
+
+  function determineHasData(
+    hours: HourDatum[],
+    humpback: ValueStatus,
+    fin: ValueStatus,
+    entry: DaySummaryEntry | undefined
+  ): boolean {
+    const hasHourly = hours.some(
+      (hour) =>
+        hour.ships !== 'missing' ||
+        hour.explosions !== 'missing' ||
+        hour.blue !== 'missing' ||
+        hour.bocaccio !== 'missing' ||
+        hour.dolphins !== 'missing'
+    );
+    if (hasHourly) return true;
+    if (humpback !== 'missing' || fin !== 'missing') return true;
+    return entry ? hasAnyValue(entry) : false;
+  }
+
+  function hasAnyValue(entry: DaySummaryEntry): boolean {
+    return Object.values(entry.values).some((value) => value !== null && value !== undefined);
+  }
+
+  function formatDayNumber(date: Date): string {
+    return String(date.getUTCDate());
+  }
+
+  function buildDayCardPreviewData(
+    date: Date,
+    entry: DaySummaryEntry | undefined,
+    hourEntries: HourSummaryEntry[]
+  ): DayCardPreviewData {
+    const hours = buildHours(hourEntries);
+    const humpback = getSeriesStatus(hourEntries, entry, 'humpbackwhale');
+    const fin = getSeriesStatus(hourEntries, entry, 'finwhale');
+    const pills = buildPills(hours);
+    const hasData = determineHasData(hours, humpback, fin, entry);
+
+    return {
+      isoDay: toIsoDay(date),
+      label: dayLabelFormatter.format(date),
+      dayNumber: formatDayNumber(date),
+      humpback,
+      fin,
+      hours,
+      pills,
+      hasData
+    };
+  }
+
+  async function loadDayCardPreview(isoDay: string, sensor: SensorId | undefined) {
+    const date = parseIsoDayToDate(isoDay);
+    if (!date) {
+      dayCardPreview = null;
+      dayCardPreviewError = 'Unable to load this day.';
+      dayCardPreviewLoading = false;
+      return;
+    }
+
+    const requestToken = ++dayCardPreviewRequestToken;
+    dayCardPreviewLoading = true;
+    dayCardPreviewError = null;
+    dayCardPreview = null;
+
+    try {
+      const [dayEntry, hourEntries] = await Promise.all([
+        getDaySummaryByDate(sensor, isoDay),
+        getHourSummary(sensor, date)
+      ]);
+
+      if (requestToken !== dayCardPreviewRequestToken) {
+        return;
+      }
+
+      if (!dayEntry && hourEntries.length === 0) {
+        dayCardPreview = null;
+        dayCardPreviewError = 'Detailed day summary is not available yet.';
+        return;
+      }
+
+      dayCardPreview = buildDayCardPreviewData(date, dayEntry, hourEntries);
+    } catch (error) {
+      if (requestToken !== dayCardPreviewRequestToken) {
+        return;
+      }
+      console.error('Failed to load day preview', error);
+      dayCardPreview = null;
+      dayCardPreviewError =
+        error instanceof Error ? error.message : 'Unable to load day preview.';
+    } finally {
+      if (requestToken === dayCardPreviewRequestToken) {
+        dayCardPreviewLoading = false;
+      }
+    }
+  }
+
+  let selectedSensorId: SensorId | undefined;
+  let previewKey: string | null = null;
   let canvasParent: HTMLDivElement | null = null;
   let sketchInstance: any = null;
   let disposeSketch: (() => void) | null = null;
   let isMounted = false;
 
-  function resolveSelectedDate() {
-    const selection = $selectedDay;
+  function resolveSelectedDate(selection: SelectedDay) {
     if (!selection) return null;
     const { time } = selection;
     if (time instanceof Date) {
@@ -64,16 +272,67 @@
     return null;
   }
 
+  function resolveIsoDay(selection: SelectedDay, date: Date | null) {
+    if (!selection) {
+      return date ? toIsoDay(date) : null;
+    }
+    const { isoDay, time } = selection;
+    if (typeof isoDay === 'string') {
+      return isoDay.slice(0, 10);
+    }
+    if (time instanceof Date) {
+      return toIsoDay(time);
+    }
+    if (typeof time === 'string') {
+      const parsed = new Date(time);
+      if (!Number.isNaN(parsed.getTime())) {
+        return toIsoDay(parsed);
+      }
+    }
+    return date ? toIsoDay(date) : null;
+  }
+
   function readColorVariable(varName: string, fallback: string): string {
     const root = getComputedStyle(document.documentElement);
     const value = root.getPropertyValue(varName);
     return value ? value.trim() || fallback : fallback;
   }
 
-  $: activeDate = resolveSelectedDate();
+  function toIsoDay(date: Date): string {
+    const year = date.getUTCFullYear();
+    const month = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getUTCDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function jumpToAnalysisDay() {
+    if (selectedIsoDay === ANALYSIS_DAY_ISO) return;
+    const target = new Date(ANALYSIS_DAY_DATE.getTime());
+    goToDay({
+      time: target,
+      isoDay: ANALYSIS_DAY_ISO,
+      label: analysisDateLabel,
+      year: ANALYSIS_DAY_YEAR
+    });
+  }
+
+  $: currentSelection = $selectedDay;
+  $: activeDate = resolveSelectedDate(currentSelection);
   $: formattedDate = activeDate ? dateFormatter.format(activeDate) : null;
   $: sensorLabel = SENSOR_METADATA.find((sensor) => sensor.id === $selectedSensor)?.label ?? 'All sensors';
-  $: shouldRenderSketch = Boolean(formattedDate);
+  $: selectedIsoDay = resolveIsoDay(currentSelection, activeDate);
+  $: shouldRenderSketch = Boolean(formattedDate && selectedIsoDay === ANALYSIS_DAY_ISO);
+  $: selectedSensorId = $selectedSensor as SensorId | undefined;
+  $: previewKey = isMounted && selectedIsoDay && selectedIsoDay !== ANALYSIS_DAY_ISO
+    ? `${selectedIsoDay}|${selectedSensorId ?? 'all'}`
+    : null;
+  $: if (previewKey) {
+    void loadDayCardPreview(selectedIsoDay as string, selectedSensorId);
+  } else if (isMounted) {
+    dayCardPreview = null;
+    dayCardPreviewError = null;
+    dayCardPreviewLoading = false;
+  }
 
   async function startSketch() {
     if (!isMounted || !shouldRenderSketch || !canvasParent || sketchInstance) return;
@@ -116,12 +375,17 @@
     stopSketch();
   });
 
-  $: if (isMounted) {
-    if (shouldRenderSketch) {
-      startSketch();
-    } else {
-      stopSketch();
-    }
+  // Stop audio when navigating away from day view
+  $: if ($currentView !== 'day' && sketchInstance) {
+    stopSketch();
+  }
+
+  $: if (!isMounted) {
+    stopSketch();
+  } else if (shouldRenderSketch && canvasParent) {
+    startSketch();
+  } else if (!shouldRenderSketch && sketchInstance) {
+    stopSketch();
   }
 
   function createSketch(P5Ctor: typeof import('p5'), container: HTMLDivElement) {
@@ -816,11 +1080,28 @@
     </div>
   </div>
 
-  {#if formattedDate}
-    <!-- <header class="day-header">
-      <h1 class="font-mono">{formattedDate}</h1>
-    </header> -->
-      <div class="sketch-canvas" bind:this={canvasParent}></div>
+  <header class="day-header m-8">
+      <h1 class="font-serif">{formattedDate}</h1>
+  </header>
+  {#if selectedIsoDay === ANALYSIS_DAY_ISO && formattedDate}
+    <div class="sketch-canvas" bind:this={canvasParent}>
+    </div>
+  {:else if formattedDate}
+    <article class="empty-state">
+            {#if dayCardPreviewLoading}
+        <p class="preview-status">Loading day summary...</p>
+      {:else if dayCardPreviewError}
+        <p class="preview-status error">{dayCardPreviewError}</p>
+      {:else if dayCardPreview}
+        <div class="day-preview">
+          <DayCardPreview card={dayCardPreview} />
+        </div>
+      {/if}
+      <p class="text-s">We are performing a more detailed analysis of each individual day using Google DeepMind's <a href="https://deepmind.google/blog/how-ai-is-helping-advance-the-science-of-bioacoustics-to-save-endangered-species/" target="_blank" rel="noopener noreferrer">Perch 2.0</a> machine learning model. Detailed day-level analysis for this day has not been completed yet. The nearest completed day is {analysisDateLabel}.</p>
+      <button type="button" class="analysis-button text-xs" on:click={jumpToAnalysisDay}>
+        Jump to {analysisDateLabel}
+      </button>
+    </article>
   {:else}
     <article class="empty-state">
       <h2>No day selected</h2>
@@ -833,7 +1114,7 @@
   .day-view {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     min-height: 0;
   }
 
@@ -842,6 +1123,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
     .legend-items {
@@ -854,6 +1136,7 @@
   .sketch-canvas {
     width: 100%;
     overflow: hidden;
+    padding: 1em;
   }
 
   :global(canvas.dayview-canvas) {
@@ -865,26 +1148,37 @@
   }
 
   .empty-state {
-    border-radius: 1rem;
-    border: 1px dashed var(--border-subtle, rgba(100, 116, 139, 0.4));
-    padding: 2rem;
-    background: var(--surface-overlay, rgba(15, 23, 42, 0.04));
+    padding: 0 2rem 2rem 2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    color: var(--text-secondary, #334155);
+    gap: 2rem;
+    color: var(--text-secondary);
   }
 
-  .empty-state p {
+  .preview-status {
     margin: 0;
-    font-size: 1rem;
-    line-height: 1.6;
+    color: var(--text-secondary);
   }
 
-  .empty-state h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
+  .preview-status.error {
+    color: var(--status-critical, #f87171);
+  }
+
+  .day-preview {
+    width: 100%;
+  }
+
+  .analysis-button {
+    align-self: flex-start;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 1em;
+  }
+
+  .analysis-button:focus-visible {
+    outline: 2px solid var(--accent, #38bdf8);
+    outline-offset: 4px;
   }
 
 </style>

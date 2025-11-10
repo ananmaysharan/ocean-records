@@ -16,11 +16,6 @@
      */
     export let status = 'STATUS';
     
-    /**
-     * @type {number | string}
-     */
-    export let count = null;
-    
     // Define colors for each sound type (matching Animation.svelte)
     const colors = {
         ships: '#E44000',
@@ -176,12 +171,11 @@
 >
     <div class="content">
         <div class="type-name uppercase font-mono text-xs">{displayName}</div>
-         <div class="count font-mono text-xs">{count}</div>
         <div class="visual">
             <div class="circle" style="background-color: {color};"></div>
             <img src={imageSrc} alt={displayName} class="illustration" />
         </div>
-        <div class="status font-mono text-xs">{status}</div>
+        <div class="status uppercase text-xs">{status}</div>
     </div>
 </div>
 
@@ -196,12 +190,8 @@
     .content {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         width: 100%;
-    }
-    
-    .count {
-        font-weight: 600;
     }
     
     .visual {
@@ -215,7 +205,7 @@
     
     .circle {
         position: absolute;
-        left: 10px;
+        /* left: 10px; */
         width: 50px;
         height: 50px;
         border-radius: 50%;
@@ -238,7 +228,6 @@
     
     .status {
         color: var(--text-secondary);
-        text-transform: uppercase;
         opacity: 0.7;
     }
 

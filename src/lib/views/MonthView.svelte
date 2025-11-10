@@ -16,7 +16,8 @@
     selectedDay,
     selectedMonth,
     selectedSensor,
-    selectedYear
+    selectedYear,
+    previousView
   } from '$lib/state/navigation';
 
   type ValueStatus = 'missing' | 'zero' | 'detect';
@@ -500,7 +501,7 @@
   </header>
 
   {#if isLoading}
-    <p class="status">Loading daily activity…</p>
+    <p class="status">...</p>
   {:else if loadError}
     <p class="status error">{loadError}</p>
   {:else if !dayCards.length}
@@ -553,7 +554,7 @@
                 y={0}
                 text-anchor="middle"
                 class="time-label"
-              >24</text>
+              >23</text>
 
               {#if card.humpback !== 'missing'}
                 <rect

@@ -11,6 +11,7 @@ export interface DaySelection {
 export type SelectedDay = DaySelection | null;
 
 const currentView = writable<ViewId>('intro');
+const previousView = writable<ViewId | null>(null);
 const selectedSensor = writable<string>('sensor-01');
 const selectedYear = writable<number | null>(null);
 const selectedMonth = writable<number | null>(null);
@@ -19,6 +20,7 @@ const selectedDay = writable<SelectedDay>(null);
 const canGoBack = derived(currentView, ($currentView) => $currentView !== 'intro');
 
 export function goToIntro(): void {
+	previousView.set(get(currentView));
 	currentView.set('intro');
 	selectedYear.set(null);
 	selectedMonth.set(null);
@@ -26,6 +28,7 @@ export function goToIntro(): void {
 }
 
 export function goToYear(year?: number | null): void {
+	previousView.set(get(currentView));
 	currentView.set('year');
 	if (year !== undefined) {
 		selectedYear.set(year);
@@ -39,6 +42,7 @@ export function setYear(year: number | null): void {
 }
 
 export function goToMonth(monthIndex: number, options: { year?: number | null } = {}): void {
+	previousView.set(get(currentView));
 	selectedMonth.set(monthIndex);
 	if (options.year !== undefined) {
 		selectedYear.set(options.year);
@@ -48,6 +52,7 @@ export function goToMonth(monthIndex: number, options: { year?: number | null } 
 }
 
 export function goToDay(dayData: DaySelection & { year?: number | null }): void {
+	previousView.set(get(currentView));
 	if (dayData.year !== undefined) {
 		selectedYear.set(dayData.year);
 	}
@@ -56,7 +61,9 @@ export function goToDay(dayData: DaySelection & { year?: number | null }): void 
 }
 
 export function goBack(): void {
-	switch (get(currentView)) {
+	const current = get(currentView);
+	previousView.set(current);
+	switch (current) {
 		case 'day':
 			currentView.set('month');
 			selectedDay.set(null);
@@ -76,6 +83,7 @@ export function goBack(): void {
 
 export const navigation = {
 	currentView,
+	previousView,
 	selectedSensor,
 		selectedYear,
 	selectedMonth,
@@ -91,6 +99,7 @@ export const navigation = {
 
 export {
 	currentView,
+	previousView,
 	selectedSensor,
 		selectedYear,
 	selectedMonth,

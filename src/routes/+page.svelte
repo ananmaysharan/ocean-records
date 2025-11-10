@@ -1,30 +1,35 @@
 <script lang="ts">
     import { MapView, MonthView, YearView, DayView } from '$lib';
-    import { currentView, goToYear } from '$lib/state/navigation';
-    import { fade } from 'svelte/transition';
+    import { currentView, previousView, goToYear } from '$lib/state/navigation';
     import ThemeToggle from '$lib/ThemeToggle.svelte';
 
     let introComplete = false;
     let showMonthView = false;
     let monthTransitionDelay = 0;
     let monthTimeoutId: ReturnType<typeof setTimeout> | null = null;
-    
+
     $: showContent = $currentView !== 'intro' && introComplete;
     $: showYearView = $currentView === 'year' || $currentView === 'month';
     $: showDayView = $currentView === 'day';
-    
+
     // Delay showing month view to allow year view animation to complete
+    // Skip delay when coming back from DayView since layout is already in place
     $: if ($currentView === 'month') {
-        // Wait for FLIP animation to complete (500ms duration + 0.02 stagger * items)
-        // Adding 200ms buffer for smooth transition
-        monthTransitionDelay = 2000;
-        if (monthTimeoutId) {
-            clearTimeout(monthTimeoutId);
-        }
-        monthTimeoutId = setTimeout(() => {
+        if ($previousView === 'day') {
+            // No delay when returning from day view - MonthView loads immediately
             showMonthView = true;
-            monthTimeoutId = null;
-        }, monthTransitionDelay);
+        } else {
+            // Wait for FLIP animation to complete when coming from YearView
+            // (500ms duration + 0.02 stagger * items + 200ms buffer)
+            monthTransitionDelay = 2000;
+            if (monthTimeoutId) {
+                clearTimeout(monthTimeoutId);
+            }
+            monthTimeoutId = setTimeout(() => {
+                showMonthView = true;
+                monthTimeoutId = null;
+            }, monthTransitionDelay);
+        }
     } else {
         if (monthTimeoutId) {
             clearTimeout(monthTimeoutId);

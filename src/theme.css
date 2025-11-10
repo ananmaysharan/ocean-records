@@ -37,16 +37,16 @@
 
 [data-theme='light'] {
     color-scheme: light;
-	--surface-1: #fff;
-	--surface-2: #fff;
-	--surface-3: #fff;
+	--surface-1: #fdfdfd;
+	--surface-2: #fdfdfd;
+	--surface-3: #fdfdfd;
 	--surface-overlay: rgba(247, 251, 255, 0.92);
 	--text-primary: #0b1726;
 	--text-secondary: #455c75;
 	--border-subtle: rgba(11, 23, 38, 0.14);
 	--accent: #70c9e6;
 	--accent-soft: rgba(0, 95, 115, 0.12);
-	--accent-strong: #fff;
+	--accent-strong: #fdfdfd;
 	--shadow-elevated: 0 16px 32px rgba(11, 23, 38, 0.12);
 }
 
