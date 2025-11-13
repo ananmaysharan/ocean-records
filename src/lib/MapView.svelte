@@ -39,7 +39,7 @@
 	const MAP_STYLES: Record<ThemeId, string> = {
 		dark: 'mapbox://styles/mapbox/dark-v11',
 		light: 'mapbox://styles/mapbox/light-v11',
-		blue: 'mapbox://styles/ananmay/cmgy3hw6600av01qobkev8nq0'
+		blue: 'mapbox://styles/ananmay/cmgy3hw6600av01qobkev8nq0?fresh=true'
 	};
 
 	const INTRO_SPIN_SECONDS_PER_REVOLUTION = 90;
