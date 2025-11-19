@@ -161,4 +161,18 @@
         display: flex;
         flex-direction: column;
     }
+
+    @media (max-width: 768px) {
+        .stage {
+            flex-direction: column;
+        }
+
+        .map-pane {
+            position: relative;
+            height: 50%;
+            border-right: none;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+    }
 </style>

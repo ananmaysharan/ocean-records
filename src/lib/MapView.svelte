@@ -107,6 +107,7 @@
 	let isTransitioning = false;
 	let introSpinEnabled = false;
 	let introUserInteracting = false;
+	let mobileWarningDialog: HTMLDialogElement;
 
 	// Subscriptions
 	let unsubscribeTheme: (() => void) | undefined;
@@ -216,8 +217,20 @@
 
 	// Functions
 	// Mode/animation
+	function isMobileDevice(): boolean {
+		if (!browser) return false;
+		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+			|| window.innerWidth < 768;
+	}
+
 	function handleEnterClick() {
 		if (!map || !mapReady || isTransitioning) return;
+		
+		// Check if mobile and show warning
+		if (isMobileDevice()) {
+			mobileWarningDialog?.showModal();
+			return;
+		}
 		
 		isTransitioning = true;
 		showEnterButton = false;
@@ -526,8 +539,8 @@
 	{#if mode === 'intro' && showEnterButton}
 		<div class="enter-overlay" transition:fade={{ duration: ENTER_TRANSITION_DURATION }}>
 		<div class="flex flex-col items-center gap-6">
-        <h1 class="text-8xl font-semibold font-serif text-text-primary">Ocean Records</h1>
-				<h5 class="text-text-primary font-mono uppercase text-2xl">Biophony & Anthrophony in Monterey Bay</h5>
+        <h1 class="md:text-8xl font-semibold font-serif text-text-primary">Ocean Records</h1>
+				<h5 class="text-text-primary font-mono uppercase md:text-2xl">Biophony & Anthrophony in Monterey Bay</h5>
 		</div>
 			<button class="enter-button flex align-center" type="button" on:click={handleEnterClick}>
 				Enter
@@ -556,6 +569,14 @@
 		</div>
 	{/if}
 </div>
+
+<dialog bind:this={mobileWarningDialog} class="mobile-warning-dialog">
+	<!-- <h3>Desktop Optimized</h3> -->
+	<p>This site is currently optimized for desktop viewing. Please visit on a desktop device for the full experience.</p>
+	<form method="dialog">
+		<button class="close-button">Close</button>
+	</form>
+</dialog>
 
 <style>
 	.map-root {
@@ -646,4 +667,53 @@
 	:global(.cursor-pointer) {
 		cursor: pointer !important;
 	}
+
+	.mobile-warning-dialog {
+		position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+		background: var(--surface-1);
+		border: 1px solid var(--border-subtle);
+		padding: 2rem;
+		width: 24rem;
+		text-align: center;
+	}
+
+	.mobile-warning-dialog::backdrop {
+		background: var(--surface-overlay, 0.6);
+		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(8px);
+	}
+
+	.mobile-warning-dialog h3 {
+		margin: 0 0 1rem;
+		font-size: 1.5rem;
+		color: var(--text-primary);
+	}
+
+	.mobile-warning-dialog p {
+		margin: 0 0 1.5rem;
+		color: var(--text-secondary);
+		line-height: 1.5;
+	}
+
+	.close-button {
+		pointer-events: auto;
+		padding: 0.75rem 2.5rem;
+		border: none;
+		font-size: 1rem;
+		text-transform: uppercase;
+		border: 1px solid var(--border-subtle);
+		cursor: pointer;
+		transition: transform 200ms ease, box-shadow 200ms ease;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.close-button:hover {
+		/* color: var(--accent); */
+		transform: scale(1.01);
+	}
+	
 </style>
