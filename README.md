@@ -47,3 +47,4 @@ npm run dev -- --open
 ## Notes
 
 - The app is optimized for desktop viewports. 
+- Deployed on Vercel.

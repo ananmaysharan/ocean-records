@@ -24,3 +24,4 @@ vite.config.ts.timestamp-*
 
 # Agent
 AGENTS.md
+CLAUDE.md
